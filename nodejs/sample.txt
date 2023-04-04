@@ -1,0 +1,3 @@
+Any specified file descriptor has to support reading.
+
+Note: If a file descriptor is specified as the path, it will not be closed automatically.
