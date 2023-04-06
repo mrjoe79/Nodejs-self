@@ -1,6 +1,7 @@
 var http = require('http');             //http모듈을 포함하려면, require 메소드를 사용한다.
 var fs = require('fs')                  //filesystem 모듈을 포함하려면, require 메소드를 사용한다.
 var url = require('url');
+var qs = require('querystring');
 
 function templateHTML(title, list, body){
   return `
@@ -11,14 +12,14 @@ function templateHTML(title, list, body){
     <meta charset="utf-8">
   </head>
   <body>
-    <h1><a href="/">WEB</a></h1>
+    <h1><a href="/">WEB2</a></h1>
     ${list}
+    <a href ="/create">create</a>
     ${body}
   </body>
   </html>
   `; 
 }
-
 function templateList(filelist){
   var list =  '<ul>';
   var i = 0;
@@ -40,14 +41,10 @@ var app = http.createServer (function(request, response){     //var http = requi
           var title = 'Welcome';
           var description = 'Hello, Node.js';
           var list = templateList(filelist);              //요거??
-
           var template = templateHTML(title, list, `<h2>${title}</h2> ${description}`);   //요거??
           response.writeHead(200);
-          response.end(template);  
-                
-        })
-
-
+          response.end(template);                  
+        });
     } else {
       fs.readdir('./data', function(error, filelist){       
         fs.readFile(`data/${queryData.id}`, 'utf8', function(err, description){
@@ -56,13 +53,42 @@ var app = http.createServer (function(request, response){     //var http = requi
           var template = templateHTML(title, list, `<h2>${title}</h2> ${description}`);  
           response.writeHead(200);
           response.end(template);
-     }); 
-    });
-  }
-      
-  } else {
-        response.writeHead(404);
-        response.end('Not found');
+      }); 
+     });
+    }      
+  } else if(pathname === '/create') {
+    fs.readdir('./data', function(error, filelist){
+      var title = 'WEB - create';      
+      var list = templateList(filelist);              //요거??
+      var template = templateHTML(title, list, `
+        <form action="http://localhost:3000/create_process" method="post">
+          <p><input type="text" name="title"></p>
+          <p>
+              <textarea name="description"></textarea>
+          </p>
+          <p>
+              <input type = "submit">
+          </p>
+      </form>
+    `);   //요거??
+      response.writeHead(200);
+      response.end(template);               
+  });
+ } else if(pathname === '/create_process'){
+      var body = '';
+      request.on('data', function(data){
+          body = body + data;
+      });
+      request.on('end', function(){
+          var post = qs.parse(body);
+          var title = post.title;
+          var description = post.description
+      });
+      response.writeHead(200);
+      response.end('success');
+    } else {
+      response.writeHead(404);
+      response.end('Not found'); 
   } 
         
     
