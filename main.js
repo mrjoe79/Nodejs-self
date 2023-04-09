@@ -3,7 +3,7 @@ var fs = require('fs')                  //filesystem 모듈을 포함하려면, 
 var url = require('url');
 var qs = require('querystring');
 
-function templateHTML(title, list, body){
+function templateHTML(title, list, body, control){
   return `
   <!doctype html>
   <html>
@@ -14,7 +14,7 @@ function templateHTML(title, list, body){
   <body>
     <h1><a href="/">WEB2</a></h1>
     ${list}
-    <a href ="/create">create</a>
+    ${control}    
     ${body}
   </body>
   </html>
@@ -41,7 +41,10 @@ var app = http.createServer (function(request, response){     //var http = requi
           var title = 'Welcome';
           var description = 'Hello, Node.js';
           var list = templateList(filelist);              //요거??
-          var template = templateHTML(title, list, `<h2>${title}</h2> ${description}`);   //요거??
+          var template = templateHTML(title, list, 
+            `<h2>${title}</h2> ${description}`, 
+            `<a href ="/create">create</a>`
+            );   //요거??
           response.writeHead(200);
           response.end(template);                  
         });
@@ -50,7 +53,9 @@ var app = http.createServer (function(request, response){     //var http = requi
         fs.readFile(`data/${queryData.id}`, 'utf8', function(err, description){
           var title = queryData.id;           //HTML만 추출
           var list = templateList(filelist);
-          var template = templateHTML(title, list, `<h2>${title}</h2> ${description}`);  
+          var template = templateHTML(title, list, `<h2>${title}</h2> ${description}`,
+          `<a href ="/create">create</a> <a href="/update?id=${title}">update</a>`
+          );  
           response.writeHead(200);
           response.end(template);
       }); 
@@ -61,7 +66,7 @@ var app = http.createServer (function(request, response){     //var http = requi
       var title = 'WEB - create';      
       var list = templateList(filelist);              //요거??
       var template = templateHTML(title, list, `
-        <form action="http://localhost:3000/create_process" method="post">
+        <form action="/create_process" method="post">
           <p><input type="text" name="title"></p>
           <p>
               <textarea name="description"></textarea>
@@ -70,7 +75,7 @@ var app = http.createServer (function(request, response){     //var http = requi
               <input type = "submit">
           </p>
       </form>
-    `);   //요거??
+    `, '');   //요거??
       response.writeHead(200);
       response.end(template);               
   });
@@ -83,10 +88,37 @@ var app = http.createServer (function(request, response){     //var http = requi
           var post = qs.parse(body);
           var title = post.title;
           var description = post.description
-      });
-      response.writeHead(200);
-      response.end('success');
-    } else {
+          fs.writeFile(`data/${title}`, description, 'utf8', function(err){
+            response.writeHead(302, {location: `/?id=${title}`});
+            response.end();
+          })
+      });      
+    } else if(pathname === `/update`) {
+      fs.readdir('./data', function(error, filelist){       
+        fs.readFile(`data/${queryData.id}`, 'utf8', function(err, description){
+          var title = queryData.id;           //HTML만 추출
+          var list = templateList(filelist);
+          var template = templateHTML(title, list,                   
+          `
+          <form action="/update_process" method="post">
+          <input type = "hidden" name = "id" value = ${title}>
+          <p><input type="text" name="title" value=${title}></p>
+          <p>
+              <textarea name="description">${description}</textarea>
+          </p>
+          <p>
+              <input type = "submit">
+          </p>
+      </form>
+          `,
+          `<a href ="/create">create</a> <a href="/update?id=${title}">update</a>`
+          );  
+          response.writeHead(200);
+          response.end(template);
+      }); 
+     });
+    }
+      else {
       response.writeHead(404);
       response.end('Not found'); 
   } 
