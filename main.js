@@ -5,6 +5,13 @@ var qs = require('querystring');
 var template = require('./lib/template.js');
 var path = require('path');
 var sanitizeHtml = require('sanitize-html');
+var mysql = require('mysql');
+var db = mysql.createConnection({
+  host     : '127.0.0.1',
+  user     : 'root',
+  password : '010912',
+  database : 'opentutorials'
+});
 
 
 
@@ -14,7 +21,7 @@ var app = http.createServer (function(request, response){     //var http = requi
     var pathname = url.parse(_url, true).pathname;       // pathname 은 '/' 를 담음 {pathname : '/'}
     if (pathname === '/') {                              // 3000포트 실행해보면, pathname은 무조건 '/'이 출력  
       if (queryData.id == undefined) {                    // 메인페이지라는 뜻 (예: http://localhost:3000/)
-        fs.readdir('./data', function(error, filelist){
+/*         fs.readdir('./data', function(error, filelist){
           var title = 'Welcome';
           var description = 'Hello, Node.js';
 
@@ -26,6 +33,18 @@ var app = http.createServer (function(request, response){     //var http = requi
           response.writeHead(200);
           response.end(html);                 
 
+        }); */
+        db.query('SELECT * from topic', function (error, topics) {
+            console.log(topics);
+            var title = 'Welcome';
+            var description = 'Hello, Node.js';  
+            var list = template.List(topics);
+            var html = template.HTML(title, list, 
+              `<h2>${title}</h2> ${description}`, 
+              `<a href ="/create">create</a>`
+              );   
+            response.writeHead(200);
+            response.end(html);                 
         });
     } else {
       fs.readdir('./data', function(error, filelist){    
