@@ -7,7 +7,7 @@ var path = require('path');
 var sanitizeHtml = require('sanitize-html');
 var mysql = require('mysql');
 var db = mysql.createConnection({
-  host     : '127.0.0.1',
+  host     : '127.0.0.1',               //localhost 라고 쓰면 오류가 난다.
   user     : 'root',
   password : '010912',
   database : 'opentutorials'
@@ -21,19 +21,6 @@ var app = http.createServer (function(request, response){     //var http = requi
     var pathname = url.parse(_url, true).pathname;       // pathname 은 '/' 를 담음 {pathname : '/'}
     if (pathname === '/') {                              // 3000포트 실행해보면, pathname은 무조건 '/'이 출력  
       if (queryData.id == undefined) {                    // 메인페이지라는 뜻 (예: http://localhost:3000/)
-/*         fs.readdir('./data', function(error, filelist){
-          var title = 'Welcome';
-          var description = 'Hello, Node.js';
-
-          var list = template.List(filelist);              //요거??
-          var html = template.HTML(title, list, 
-            `<h2>${title}</h2> ${description}`, 
-            `<a href ="/create">create</a>`
-            );   //요거??
-          response.writeHead(200);
-          response.end(html);                 
-
-        }); */
         db.query('SELECT * from topic', function (error, topics) {
             console.log(topics);
             var title = 'Welcome';
@@ -47,26 +34,30 @@ var app = http.createServer (function(request, response){     //var http = requi
             response.end(html);                 
         });
     } else {
-      fs.readdir('./data', function(error, filelist){    
-        var filteredId = path.parse(queryData.id).base;
-        fs.readFile(`data/${filteredId}`, 'utf8', function(err, description){
-          var title = queryData.id;           //HTML만 추출
-          var sanitizedTitle = sanitizeHtml(title);
-          var sanitizedDescription = sanitizeHtml(description);
-          var list = template.List(filelist);
-          var html = template.HTML(sanitizedTitle, list, `<h2>${sanitizedTitle}</h2> ${sanitizedDescription}`,
-          ` <a href ="/create">create</a> 
-            <a href="/update?id=${sanitizedTitle}">update</a>
-            <form action="delete_process" method="post">
-              <input type ="hidden" name="id" value="${sanitizedTitle}">
-              <input type ="submit" value="delete">
-            </form>
-            `
-          );  
-          response.writeHead(200);
-          response.end(html);
-      }); 
-     });
+      db.query(`SELECT * from topic`, function (error, topics) {
+        if (error) {
+          throw error;
+        }
+        db.query(`SELECT * from topic where id=?`, [queryData.id], function(error2, topic) {
+          if (error2) {
+            throw error2;
+          }
+          var title = topic[0].title;
+          var description = topic[0].description;  
+          var list = template.List(topics);
+          var html = template.HTML(title, list, 
+            `<h2>${title}</h2> ${description}`, 
+            `<a href ="/create">create</a>`
+              <a href="/update?id=${queryData.id}">update</a>
+              <form action="delete_process" method="post">
+                <input type ="hidden" name="id" value="${queryData.id}">
+                <input type ="submit" value="delete">
+              </form>`
+            );   
+            response.writeHead(200);
+            response.end(html);              
+        })         
+    });
     }      
   } else if(pathname === '/create') {
     fs.readdir('./data', function(error, filelist){
